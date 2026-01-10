@@ -1,33 +1,8 @@
 from flask import Flask, jsonify, render_template, send_from_directory
 import sync_service
 import os
-import threading
-import schedule
-import time
-from datetime import datetime
-import pytz
 
 app = Flask(__name__)
-
-def sync_job():
-    print(f"Running sync at {datetime.now()}")
-    result = sync_service.sync_data()
-    print(result)
-
-def run_scheduler():
-    sync_job()
-    
-    uae_tz = pytz.timezone('Asia/Dubai')
-    schedule.every().day.at("00:00").do(sync_job)
-    
-    print("Scheduler started. Sync will run daily at 12:00 AM UAE time")
-    
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
-
-scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-scheduler_thread.start()
 
 @app.route('/')
 def index():
@@ -48,4 +23,4 @@ def serve_image(serial_id, filename):
     return send_from_directory(os.path.join('Images', serial_id), filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
