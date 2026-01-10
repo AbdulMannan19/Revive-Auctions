@@ -1,8 +1,36 @@
 from flask import Flask, jsonify, render_template, send_from_directory
 import sync_service
 import os
+import threading
+import schedule
+import time
+from datetime import datetime
+import pytz
 
 app = Flask(__name__)
+
+def sync_job():
+    print(f"Running scheduled sync at {datetime.now()}")
+    result = sync_service.sync_data()
+    print(result)
+
+def run_scheduler():
+    # Run sync on startup
+    sync_job()
+    
+    # Schedule daily sync at 12:00 AM UAE time
+    uae_tz = pytz.timezone('Asia/Dubai')
+    schedule.every().day.at("00:00").do(sync_job)
+    
+    print("Scheduler started. Sync will run daily at 12:00 AM UAE time")
+    
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
+
+# Start scheduler in background thread
+scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+scheduler_thread.start()
 
 @app.route('/')
 def index():
