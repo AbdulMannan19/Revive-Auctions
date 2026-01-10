@@ -1,0 +1,5 @@
+flask
+requests
+schedule
+pytz
+python-dotenv
