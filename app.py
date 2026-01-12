@@ -3,8 +3,6 @@ import sync_service
 
 app = Flask(__name__)
 
-sync_service.sync_data()
-
 @app.route('/')
 def index():
     return render_template('index.html', vehicles=sync_service.vehicles_cache)

@@ -70,7 +70,10 @@ def sync_data():
     init_drive_service()
     new_csv = fetch_csv_from_sheet()
     
-    if last_csv_data is None or new_csv != last_csv_data:
+    # Compare with data.csv from Drive instead of in-memory variable
+    existing_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
+    
+    if existing_csv is None or new_csv != existing_csv:
         print('\n=== Starting Sync ===')
         print('Processing and cleaning CSV data...')
         df = clean_csv_data(new_csv)
@@ -101,4 +104,4 @@ def sync_data():
             data_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
             if data_csv:
                 vehicles_cache = parse_vehicles(data_csv)
-        print('No changes detected')
+        print('No changes detected - data.csv matches Excel sheet')
