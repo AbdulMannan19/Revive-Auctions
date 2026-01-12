@@ -3,6 +3,8 @@ import sync_service
 
 app = Flask(__name__)
 
+sync_service.sync_data()
+
 @app.route('/')
 def index():
     return render_template('index.html', vehicles=sync_service.vehicles_cache)
@@ -13,5 +15,4 @@ def api_vehicles():
     return jsonify(sync_service.vehicles_cache)
 
 if __name__ == '__main__':
-    sync_service.sync_data()
     app.run(host='0.0.0.0', port=5000)
