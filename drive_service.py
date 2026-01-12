@@ -1,0 +1,217 @@
+import os
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+import io
+
+SCOPES = ['https://www.googleapis.com/auth/drive']
+ROOT_FOLDER_NAME = 'Revive Auctions'
+BUFFER_FOLDER_NAME = 'Buffer'
+IMAGES_FOLDER_NAME = 'Images'
+CSV_BUFFER_NAME = 'buffer.csv'
+CSV_DATA_NAME = 'data.csv'
+
+def get_drive_service():
+    creds = None
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                with open('token.json', 'w') as token:
+                    token.write(creds.to_json())
+            except Exception as e:
+                print(f'Error refreshing token: {e}')
+                raise Exception('Token refresh failed. Please re-authenticate locally.')
+        else:
+            # Only run browser auth if not on server
+            if os.getenv('RENDER'):
+                raise Exception('No valid credentials. Please authenticate locally first.')
+            
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+            
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
+    
+    return build('drive', 'v3', credentials=creds)
+
+def get_or_create_folder(service, folder_name, parent_id=None):
+    query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    if parent_id:
+        query += f" and '{parent_id}' in parents"
+    
+    results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+    folders = results.get('files', [])
+    
+    if folders:
+        return folders[0]['id']
+    
+    folder_metadata = {
+        'name': folder_name,
+        'mimeType': 'application/vnd.google-apps.folder'
+    }
+    if parent_id:
+        folder_metadata['parents'] = [parent_id]
+    
+    folder = service.files().create(body=folder_metadata, fields='id').execute()
+    return folder['id']
+
+def setup_folder_structure(service):
+    root_id = get_or_create_folder(service, ROOT_FOLDER_NAME)
+    buffer_id = get_or_create_folder(service, BUFFER_FOLDER_NAME, root_id)
+    images_id = get_or_create_folder(service, IMAGES_FOLDER_NAME, root_id)
+    return root_id, buffer_id, images_id
+
+def create_vehicle_folder(service, parent_folder_id, vehicle_id):
+    folder_name = str(vehicle_id)
+    query = f"name='{folder_name}' and '{parent_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    results = service.files().list(q=query, fields='files(id)').execute()
+    folders = results.get('files', [])
+    
+    if folders:
+        return folders[0]['id']
+    
+    folder_metadata = {
+        'name': folder_name,
+        'mimeType': 'application/vnd.google-apps.folder',
+        'parents': [parent_folder_id]
+    }
+    folder = service.files().create(body=folder_metadata, fields='id').execute()
+    return folder['id']
+
+def extract_folder_id(url):
+    import re
+    match = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
+    return match.group(1) if match else None
+
+def get_images_from_folder(service, folder_id, limit=None):
+    try:
+        query = f"'{folder_id}' in parents and mimeType contains 'image/' and trashed=false"
+        results = service.files().list(
+            q=query,
+            fields='files(id, name)',
+            pageSize=1000 if not limit else limit
+        ).execute()
+        files = results.get('files', [])
+        return files[:limit] if limit else files
+    except Exception as e:
+        print(f'  Error accessing folder: {e}')
+        return []
+
+def copy_image_to_folder(service, source_file_id, dest_folder_id, new_name):
+    try:
+        file_metadata = {
+            'name': new_name,
+            'parents': [dest_folder_id]
+        }
+        service.files().copy(fileId=source_file_id, body=file_metadata).execute()
+        return True
+    except Exception as e:
+        print(f'    Error copying image: {e}')
+        return False
+
+def copy_images_for_vehicle(service, vehicle_id, source_drive_link, dest_folder_id):
+    source_folder_id = extract_folder_id(source_drive_link)
+    if not source_folder_id:
+        print(f'  ✗ Invalid Drive link')
+        return 0
+    
+    images = get_images_from_folder(service, source_folder_id)
+    copied_count = 0
+    
+    for idx, img in enumerate(images):
+        if copy_image_to_folder(service, img['id'], dest_folder_id, f'image_{idx+1}.jpg'):
+            copied_count += 1
+    
+    return copied_count
+
+def get_file_in_folder(service, filename, folder_id):
+    query = f"name='{filename}' and '{folder_id}' in parents and trashed=false"
+    results = service.files().list(q=query, fields='files(id)').execute()
+    files = results.get('files', [])
+    return files[0]['id'] if files else None
+
+def upload_csv_to_drive(service, csv_content, filename, folder_id):
+    with open('temp.csv', 'w', encoding='utf-8') as f:
+        f.write(csv_content)
+    
+    file_metadata = {
+        'name': filename,
+        'parents': [folder_id]
+    }
+    media = MediaFileUpload('temp.csv', mimetype='text/csv')
+    
+    existing_file_id = get_file_in_folder(service, filename, folder_id)
+    
+    if existing_file_id:
+        service.files().update(fileId=existing_file_id, media_body=media).execute()
+    else:
+        service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    
+    try:
+        os.remove('temp.csv')
+    except:
+        pass
+
+def download_csv_from_drive(service, filename, folder_id):
+    file_id = get_file_in_folder(service, filename, folder_id)
+    if not file_id:
+        return None
+    
+    request = service.files().get_media(fileId=file_id)
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+    
+    return fh.getvalue().decode('utf-8')
+
+def delete_file_in_folder(service, filename, folder_id):
+    file_id = get_file_in_folder(service, filename, folder_id)
+    if file_id:
+        service.files().delete(fileId=file_id).execute()
+
+def delete_folder_contents(service, folder_id):
+    query = f"'{folder_id}' in parents and trashed=false"
+    results = service.files().list(q=query, fields='files(id)').execute()
+    files = results.get('files', [])
+    
+    for file in files:
+        service.files().delete(fileId=file['id']).execute()
+
+def move_folder_contents(service, source_folder_id, dest_folder_id):
+    query = f"'{source_folder_id}' in parents and trashed=false"
+    results = service.files().list(q=query, fields='files(id)').execute()
+    files = results.get('files', [])
+    
+    for file in files:
+        service.files().update(
+            fileId=file['id'],
+            addParents=dest_folder_id,
+            removeParents=source_folder_id,
+            fields='id, parents'
+        ).execute()
+
+def swap_buffer_to_images(service, buffer_folder_id, images_folder_id):
+    print('Swapping Buffer → Images...')
+    delete_folder_contents(service, images_folder_id)
+    move_folder_contents(service, buffer_folder_id, images_folder_id)
+    print('✓ Swap complete!')
+
+def swap_csv_files(service, root_folder_id):
+    delete_file_in_folder(service, CSV_DATA_NAME, root_folder_id)
+    
+    buffer_file_id = get_file_in_folder(service, CSV_BUFFER_NAME, root_folder_id)
+    if buffer_file_id:
+        service.files().update(
+            fileId=buffer_file_id,
+            body={'name': CSV_DATA_NAME}
+        ).execute()
+
