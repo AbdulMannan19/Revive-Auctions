@@ -59,7 +59,26 @@ def get_or_create_folder(service, folder_name, parent_id=None):
         folder_metadata['parents'] = [parent_id]
     
     folder = service.files().create(body=folder_metadata, fields='id').execute()
-    return folder['id']
+    folder_id = folder['id']
+    
+    # Make folder publicly accessible
+    make_public(service, folder_id)
+    
+    return folder_id
+
+def make_public(service, file_id):
+    try:
+        permission = {
+            'type': 'anyone',
+            'role': 'reader'
+        }
+        service.permissions().create(
+            fileId=file_id,
+            body=permission,
+            fields='id'
+        ).execute()
+    except Exception as e:
+        print(f'Warning: Could not make file public: {e}')
 
 def setup_folder_structure(service):
     root_id = get_or_create_folder(service, ROOT_FOLDER_NAME)
@@ -124,7 +143,11 @@ def copy_image_to_folder(service, source_file_id, dest_folder_id, new_name):
                 'name': new_name,
                 'parents': [dest_folder_id]
             }
-            service.files().copy(fileId=source_file_id, body=file_metadata).execute()
+            copied_file = service.files().copy(fileId=source_file_id, body=file_metadata, fields='id').execute()
+            
+            # Make the copied image public
+            make_public(service, copied_file['id'])
+            
             return True
         except Exception as e:
             if attempt < 2:
@@ -137,7 +160,7 @@ def copy_images_for_vehicle(service, vehicle_id, source_drive_link, dest_folder_
     source_folder_id = extract_folder_id(source_drive_link)
     if not source_folder_id:
         print(f'  ✗ Invalid Drive link')
-        return 0
+        return 0, None
     
     images = get_images_from_folder(service, source_folder_id, limit=5)
     copied_count = 0
@@ -146,7 +169,11 @@ def copy_images_for_vehicle(service, vehicle_id, source_drive_link, dest_folder_
         if copy_image_to_folder(service, img['id'], dest_folder_id, f'image_{idx+1}.jpg'):
             copied_count += 1
     
-    return copied_count
+    # Get the public link to the destination folder
+    folder_info = service.files().get(fileId=dest_folder_id, fields='webViewLink').execute()
+    dest_folder_link = folder_info.get('webViewLink', source_drive_link)
+    
+    return copied_count, dest_folder_link
 
 def get_file_in_folder(service, filename, folder_id):
     query = f"name='{filename}' and '{folder_id}' in parents and trashed=false"
@@ -168,8 +195,10 @@ def upload_csv_to_drive(service, csv_content, filename, folder_id):
     
     if existing_file_id:
         service.files().update(fileId=existing_file_id, media_body=media).execute()
+        make_public(service, existing_file_id)
     else:
-        service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        uploaded_file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        make_public(service, uploaded_file['id'])
     
     try:
         os.remove('temp.csv')

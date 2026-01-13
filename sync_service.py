@@ -2,6 +2,7 @@ import requests
 import csv
 import os
 import pandas as pd
+import io
 from dotenv import load_dotenv
 import drive_service
 
@@ -76,27 +77,54 @@ def sync_data():
     init_drive_service()
     new_csv = fetch_csv_from_sheet()
     
-    # Compare with data.csv from Drive instead of in-memory variable
+    # Clean the new data
+    df_new = clean_csv_data(new_csv)
+    
+    # Load existing data.csv from Drive and convert to df
     existing_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
     
-    if existing_csv is None or new_csv != existing_csv:
-        print('\n=== Starting Sync ===')
-        print('Processing and cleaning CSV data...')
-        df = clean_csv_data(new_csv)
-        clean_csv = df_to_clean_csv(df)
+    if existing_csv is None:
+        data_changed = True
+        print('No existing data.csv found - first sync')
+    else:
+        df_existing = pd.read_csv(io.StringIO(existing_csv))
         
+        # Convert both to strings for comparison (ignore type differences)
+        df_existing_str = df_existing.astype(str)
+        df_new_str = df_new.astype(str)
+        
+        data_changed = not df_existing_str.equals(df_new_str)
+        
+        if data_changed:
+            print('Data has changed - syncing')
+        else:
+            print('Data is identical - skipping sync')
+    
+    if data_changed:
+        print('\n=== Starting Sync ===')
+        
+        clean_csv = df_to_clean_csv(df_new)
         print('Uploading buffer.csv to Drive...')
         drive_service.upload_csv_to_drive(drive_service_instance, clean_csv, 'buffer.csv', root_folder_id)
         
         print(f'Creating vehicle folders and copying images to Buffer/ (TEST: 3 vehicles, 5 images each)...')
-        for idx, row in df.head(3).iterrows():
+        
+        # Store new drive links
+        new_drive_links = {}
+        
+        for idx, row in df_new.head(3).iterrows():
             vehicle_id = row['ID']
             drive_link = row['Drive Link']
             
             print(f'Vehicle {vehicle_id}:', end=' ')
             folder_id = drive_service.create_vehicle_folder(drive_service_instance, buffer_folder_id, vehicle_id)
-            copied = drive_service.copy_images_for_vehicle(drive_service_instance, vehicle_id, drive_link, folder_id)
+            copied, new_link = drive_service.copy_images_for_vehicle(drive_service_instance, vehicle_id, drive_link, folder_id)
+            new_drive_links[vehicle_id] = new_link
             print(f'✓ {copied} images')
+        
+        # Update DataFrame with new drive links
+        df_new['Drive Link'] = df_new['ID'].map(new_drive_links).fillna(df_new['Drive Link'])
+        clean_csv = df_to_clean_csv(df_new)
         
         print('\nBuffer ready! Swapping...')
         drive_service.swap_buffer_to_images(drive_service_instance, buffer_folder_id, images_folder_id)
