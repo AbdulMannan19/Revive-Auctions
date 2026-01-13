@@ -49,6 +49,12 @@ def clean_csv_data(csv_text):
     df = pd.DataFrame(clean_rows, columns=['ID', 'Vehicle Details', 'Price', 'Location', 'Drive Link'])
     return df
 
+def df_to_clean_csv(df):
+    import io
+    output = io.StringIO()
+    df.to_csv(output, index=False, lineterminator='\n')
+    return output.getvalue()
+
 def parse_vehicles(csv_text):
     df = clean_csv_data(csv_text)
     vehicles = []
@@ -77,13 +83,13 @@ def sync_data():
         print('\n=== Starting Sync ===')
         print('Processing and cleaning CSV data...')
         df = clean_csv_data(new_csv)
-        clean_csv = df.to_csv(index=False)
+        clean_csv = df_to_clean_csv(df)
         
         print('Uploading buffer.csv to Drive...')
         drive_service.upload_csv_to_drive(drive_service_instance, clean_csv, 'buffer.csv', root_folder_id)
         
-        print(f'Creating {len(df)} vehicle folders and copying images to Buffer/...')
-        for idx, row in df.iterrows():
+        print(f'Creating vehicle folders and copying images to Buffer/ (TEST: 3 vehicles, 5 images each)...')
+        for idx, row in df.head(3).iterrows():
             vehicle_id = row['ID']
             drive_link = row['Drive Link']
             

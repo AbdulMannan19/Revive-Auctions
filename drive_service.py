@@ -68,34 +68,47 @@ def setup_folder_structure(service):
     return root_id, buffer_id, images_id
 
 def create_vehicle_folder(service, parent_folder_id, vehicle_id):
+    import time
     folder_name = str(vehicle_id)
+    
+    # Check if folder already exists
     query = f"name='{folder_name}' and '{parent_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-    results = service.files().list(q=query, fields='files(id)').execute()
-    folders = results.get('files', [])
     
-    if folders:
-        return folders[0]['id']
-    
-    folder_metadata = {
-        'name': folder_name,
-        'mimeType': 'application/vnd.google-apps.folder',
-        'parents': [parent_folder_id]
-    }
-    folder = service.files().create(body=folder_metadata, fields='id').execute()
-    return folder['id']
+    for attempt in range(3):
+        try:
+            results = service.files().list(q=query, fields='files(id)').execute()
+            folders = results.get('files', [])
+            
+            if folders:
+                return folders[0]['id']
+            
+            folder_metadata = {
+                'name': folder_name,
+                'mimeType': 'application/vnd.google-apps.folder',
+                'parents': [parent_folder_id]
+            }
+            folder = service.files().create(body=folder_metadata, fields='id').execute()
+            return folder['id']
+        except Exception as e:
+            if attempt < 2:
+                print(f'  Retry {attempt+1}/3...', end=' ')
+                time.sleep(2)
+            else:
+                print(f'  Error: {e}')
+                raise
 
 def extract_folder_id(url):
     import re
     match = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
     return match.group(1) if match else None
 
-def get_images_from_folder(service, folder_id, limit=None):
+def get_images_from_folder(service, folder_id, limit=5):
     try:
         query = f"'{folder_id}' in parents and mimeType contains 'image/' and trashed=false"
         results = service.files().list(
             q=query,
             fields='files(id, name)',
-            pageSize=1000 if not limit else limit
+            pageSize=limit if limit else 1000
         ).execute()
         files = results.get('files', [])
         return files[:limit] if limit else files
@@ -104,16 +117,21 @@ def get_images_from_folder(service, folder_id, limit=None):
         return []
 
 def copy_image_to_folder(service, source_file_id, dest_folder_id, new_name):
-    try:
-        file_metadata = {
-            'name': new_name,
-            'parents': [dest_folder_id]
-        }
-        service.files().copy(fileId=source_file_id, body=file_metadata).execute()
-        return True
-    except Exception as e:
-        print(f'    Error copying image: {e}')
-        return False
+    import time
+    for attempt in range(3):
+        try:
+            file_metadata = {
+                'name': new_name,
+                'parents': [dest_folder_id]
+            }
+            service.files().copy(fileId=source_file_id, body=file_metadata).execute()
+            return True
+        except Exception as e:
+            if attempt < 2:
+                time.sleep(1)
+            else:
+                print(f'    Error: {e}')
+                return False
 
 def copy_images_for_vehicle(service, vehicle_id, source_drive_link, dest_folder_id):
     source_folder_id = extract_folder_id(source_drive_link)
@@ -121,7 +139,7 @@ def copy_images_for_vehicle(service, vehicle_id, source_drive_link, dest_folder_
         print(f'  ✗ Invalid Drive link')
         return 0
     
-    images = get_images_from_folder(service, source_folder_id)
+    images = get_images_from_folder(service, source_folder_id, limit=5)
     copied_count = 0
     
     for idx, img in enumerate(images):
@@ -203,7 +221,7 @@ def swap_buffer_to_images(service, buffer_folder_id, images_folder_id):
     print('Swapping Buffer → Images...')
     delete_folder_contents(service, images_folder_id)
     move_folder_contents(service, buffer_folder_id, images_folder_id)
-    print('✓ Swap complete!')
+    print('✓ Swap complete! Buffer is now empty')
 
 def swap_csv_files(service, root_folder_id):
     delete_file_in_folder(service, CSV_DATA_NAME, root_folder_id)
@@ -214,4 +232,6 @@ def swap_csv_files(service, root_folder_id):
             fileId=buffer_file_id,
             body={'name': CSV_DATA_NAME}
         ).execute()
+    
+    print('✓ CSV swapped, buffer.csv removed')
 
