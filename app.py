@@ -1,10 +1,26 @@
 from flask import Flask, jsonify, render_template
 import sync_service
 import threading
+import os
 
 app = Flask(__name__)
 
 sync_in_progress = False
+
+def initial_sync():
+    global sync_in_progress
+    sync_in_progress = True
+    try:
+        print('Running initial sync on startup...')
+        sync_service.sync_data()
+        print('Initial sync complete!')
+    except Exception as e:
+        print(f'Initial sync failed: {e}')
+    finally:
+        sync_in_progress = False
+
+# Run initial sync in background when app starts
+threading.Thread(target=initial_sync, daemon=True).start()
 
 @app.route('/')
 def index():
@@ -44,4 +60,5 @@ def api_status():
     })
 
 if __name__ == '__main__':
+    sync_service.sync_data()  # Run sync before starting local server
     app.run(host='0.0.0.0', port=5000)
