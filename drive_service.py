@@ -11,6 +11,7 @@ ROOT_FOLDER_NAME = 'Revive Auctions'
 BUFFER_FOLDER_NAME = 'Buffer'
 IMAGES_FOLDER_NAME = 'Images'
 CSV_BUFFER_NAME = 'buffer.csv'
+CSV_SOURCE_NAME = 'source.csv'
 CSV_DATA_NAME = 'data.csv'
 
 def get_drive_service():
@@ -253,14 +254,58 @@ def swap_buffer_to_images(service, buffer_folder_id, images_folder_id):
     print('✓ Swap complete! Buffer is now empty')
 
 def swap_csv_files(service, root_folder_id):
-    delete_file_in_folder(service, CSV_DATA_NAME, root_folder_id)
+    delete_file_in_folder(service, CSV_SOURCE_NAME, root_folder_id)
     
     buffer_file_id = get_file_in_folder(service, CSV_BUFFER_NAME, root_folder_id)
     if buffer_file_id:
         service.files().update(
             fileId=buffer_file_id,
-            body={'name': CSV_DATA_NAME}
+            body={'name': CSV_SOURCE_NAME}
         ).execute()
     
-    print('✓ CSV swapped, buffer.csv removed')
+    print('✓ CSV swapped: buffer.csv → source.csv')
+
+def get_vehicle_folder_link(service, images_folder_id, vehicle_id):
+    """Get the public webViewLink for a vehicle folder in Images/"""
+    folder_name = str(vehicle_id)
+    query = f"name='{folder_name}' and '{images_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    
+    results = service.files().list(q=query, fields='files(id, webViewLink)').execute()
+    folders = results.get('files', [])
+    
+    if folders:
+        return folders[0].get('webViewLink', '')
+    return ''
+
+def create_data_csv_with_managed_links(service, root_folder_id, images_folder_id):
+    """Read source.csv and create data.csv with managed Drive links"""
+    import pandas as pd
+    import io
+    
+    print('Creating data.csv with managed Drive links...')
+    
+    # Download source.csv
+    source_csv = download_csv_from_drive(service, CSV_SOURCE_NAME, root_folder_id)
+    if not source_csv:
+        print('  ✗ source.csv not found')
+        return
+    
+    # Parse into DataFrame
+    df = pd.read_csv(io.StringIO(source_csv))
+    
+    # Update Drive links with managed folder links
+    for idx, row in df.iterrows():
+        vehicle_id = row['ID']
+        managed_link = get_vehicle_folder_link(service, images_folder_id, vehicle_id)
+        if managed_link:
+            df.at[idx, 'Drive Link'] = managed_link
+    
+    # Convert back to CSV
+    output = io.StringIO()
+    df.to_csv(output, index=False, lineterminator='\n')
+    clean_csv = output.getvalue()
+    
+    # Upload as data.csv
+    upload_csv_to_drive(service, clean_csv, CSV_DATA_NAME, root_folder_id)
+    print('✓ data.csv created with managed links')
 

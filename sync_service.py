@@ -71,6 +71,19 @@ def parse_vehicles(csv_text):
     
     return vehicles
 
+def load_cache_from_drive():
+    """Load vehicles_cache from data.csv on Drive"""
+    global vehicles_cache
+    
+    init_drive_service()
+    
+    data_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
+    if data_csv:
+        vehicles_cache = parse_vehicles(data_csv)
+        print(f'✓ Loaded {len(vehicles_cache)} vehicles from data.csv')
+    else:
+        print('⚠ No data.csv found on Drive')
+
 def sync_data():
     global vehicles_cache, last_csv_data
     
@@ -80,12 +93,12 @@ def sync_data():
     # Clean the new data
     df_new = clean_csv_data(new_csv)
     
-    # Load existing data.csv from Drive and convert to df
-    existing_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
+    # Load existing source.csv from Drive and convert to df
+    existing_csv = drive_service.download_csv_from_drive(drive_service_instance, 'source.csv', root_folder_id)
     
     if existing_csv is None:
         data_changed = True
-        print('No existing data.csv found - first sync')
+        print('No existing source.csv found - first sync')
     else:
         df_existing = pd.read_csv(io.StringIO(existing_csv))
         
@@ -130,12 +143,15 @@ def sync_data():
         drive_service.swap_buffer_to_images(drive_service_instance, buffer_folder_id, images_folder_id)
         drive_service.swap_csv_files(drive_service_instance, root_folder_id)
         
-        vehicles_cache = parse_vehicles(new_csv)
+        # Create data.csv with managed Drive links
+        drive_service.create_data_csv_with_managed_links(drive_service_instance, root_folder_id, images_folder_id)
+        
+        # Load the new data.csv for cache
+        data_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
+        if data_csv:
+            vehicles_cache = parse_vehicles(data_csv)
+        
         last_csv_data = new_csv
         print(f'\n✓ Sync complete! {len(vehicles_cache)} vehicles ready')
     else:
-        if not vehicles_cache:
-            data_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
-            if data_csv:
-                vehicles_cache = parse_vehicles(data_csv)
-        print('No changes detected - data.csv matches Excel sheet')
+        print('No changes detected - source.csv matches Excel sheet')

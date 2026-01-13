@@ -7,20 +7,23 @@ app = Flask(__name__)
 
 sync_in_progress = False
 
-def initial_sync():
+def startup_load():
+    """Load cache from Drive on startup, then check for updates"""
     global sync_in_progress
-    sync_in_progress = True
     try:
-        print('Running initial sync on startup...')
+        print('Loading data from Drive...')
+        sync_service.load_cache_from_drive()
+        print('Checking for updates...')
+        sync_in_progress = True
         sync_service.sync_data()
-        print('Initial sync complete!')
+        print('Startup complete!')
     except Exception as e:
-        print(f'Initial sync failed: {e}')
+        print(f'Startup error: {e}')
     finally:
         sync_in_progress = False
 
-# Run initial sync in background when app starts
-threading.Thread(target=initial_sync, daemon=True).start()
+# Load cache and check for updates on startup
+threading.Thread(target=startup_load, daemon=True).start()
 
 @app.route('/')
 def index():
@@ -60,5 +63,5 @@ def api_status():
     })
 
 if __name__ == '__main__':
-    sync_service.sync_data()  # Run sync before starting local server
+    # Sync already runs in background thread on startup
     app.run(host='0.0.0.0', port=5000)
