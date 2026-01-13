@@ -119,9 +119,6 @@ def load_cache_from_drive():
     else:
         print('⚠ No data.csv found on Drive')
         print('[DEBUG] data_csv is None or empty')
-        print(f'✓ Loaded {len(vehicles_cache)} vehicles from data.csv')
-    else:
-        print('⚠ No data.csv found on Drive')
 
 def sync_data():
     global vehicles_cache, last_csv_data
