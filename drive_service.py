@@ -207,13 +207,10 @@ def upload_csv_to_drive(service, csv_content, filename, folder_id):
         pass
 
 def download_csv_from_drive(service, filename, folder_id):
-    print(f'[DEBUG] download_csv_from_drive: filename={filename}, folder_id={folder_id}')
     file_id = get_file_in_folder(service, filename, folder_id)
     if not file_id:
-        print(f'[DEBUG] File {filename} not found in folder {folder_id}')
         return None
     
-    print(f'[DEBUG] Found file_id: {file_id}, downloading...')
     request = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
     downloader = MediaIoBaseDownload(fh, request)
@@ -222,9 +219,7 @@ def download_csv_from_drive(service, filename, folder_id):
     while not done:
         status, done = downloader.next_chunk()
     
-    content = fh.getvalue().decode('utf-8')
-    print(f'[DEBUG] Downloaded {len(content)} chars')
-    return content
+    return fh.getvalue().decode('utf-8')
 
 def delete_file_in_folder(service, filename, folder_id):
     file_id = get_file_in_folder(service, filename, folder_id)
@@ -259,16 +254,19 @@ def swap_buffer_to_images(service, buffer_folder_id, images_folder_id):
     print('✓ Swap complete! Buffer is now empty')
 
 def swap_csv_files(service, root_folder_id):
-    delete_file_in_folder(service, CSV_SOURCE_NAME, root_folder_id)
+    # Get buffer.csv content
+    buffer_content = download_csv_from_drive(service, CSV_BUFFER_NAME, root_folder_id)
     
-    buffer_file_id = get_file_in_folder(service, CSV_BUFFER_NAME, root_folder_id)
-    if buffer_file_id:
-        service.files().update(
-            fileId=buffer_file_id,
-            body={'name': CSV_SOURCE_NAME}
-        ).execute()
-    
-    print('✓ CSV swapped: buffer.csv → source.csv')
+    if buffer_content:
+        # Update source.csv with buffer content (keeps same file ID = permanent link!)
+        upload_csv_to_drive(service, buffer_content, CSV_SOURCE_NAME, root_folder_id)
+        
+        # Delete buffer.csv
+        delete_file_in_folder(service, CSV_BUFFER_NAME, root_folder_id)
+        
+        print('✓ CSV swapped: buffer.csv → source.csv (file ID preserved)')
+    else:
+        print('✗ buffer.csv not found, cannot swap')
 
 def get_vehicle_folder_link(service, images_folder_id, vehicle_id):
     """Get the public webViewLink for a vehicle folder in Images/"""

@@ -73,13 +73,8 @@ def parse_vehicles(csv_text):
 
 def parse_clean_csv(csv_text):
     """Parse already-cleaned CSV (like data.csv from Drive)"""
-    print(f'[DEBUG] parse_clean_csv() called with {len(csv_text)} chars')
     try:
         df = pd.read_csv(io.StringIO(csv_text))
-        print(f'[DEBUG] DataFrame shape: {df.shape}')
-        print(f'[DEBUG] DataFrame columns: {df.columns.tolist()}')
-        print(f'[DEBUG] First row: {df.iloc[0].to_dict() if len(df) > 0 else "Empty"}')
-        
         vehicles = []
         
         for _, row in df.iterrows():
@@ -91,34 +86,24 @@ def parse_clean_csv(csv_text):
                 'drive_link': row['Drive Link']
             })
         
-        print(f'[DEBUG] Parsed {len(vehicles)} vehicles')
         return vehicles
     except Exception as e:
-        print(f'[DEBUG ERROR] parse_clean_csv failed: {e}')
-        import traceback
-        traceback.print_exc()
+        print(f'Error parsing CSV: {e}')
         return []
 
 def load_cache_from_drive():
     """Load vehicles_cache from data.csv on Drive"""
     global vehicles_cache
     
-    print('[DEBUG] load_cache_from_drive() called')
     init_drive_service()
     
-    print('[DEBUG] Attempting to download data.csv from Drive...')
     data_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
     
     if data_csv:
-        print(f'[DEBUG] data.csv downloaded, length: {len(data_csv)} chars')
-        print(f'[DEBUG] First 200 chars: {data_csv[:200]}')
-        vehicles_cache = parse_clean_csv(data_csv)  # Use parse_clean_csv instead!
+        vehicles_cache = parse_clean_csv(data_csv)
         print(f'✓ Loaded {len(vehicles_cache)} vehicles from data.csv')
-        if vehicles_cache:
-            print(f'[DEBUG] First vehicle: {vehicles_cache[0]}')
     else:
         print('⚠ No data.csv found on Drive')
-        print('[DEBUG] data_csv is None or empty')
 
 def sync_data():
     global vehicles_cache, last_csv_data

@@ -7,6 +7,7 @@
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
         .header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .loading { text-align: center; padding: 40px; font-size: 18px; color: #555; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
@@ -21,17 +22,81 @@
 <body>
     <div class="header"><h1>Revive Auctions</h1></div>
     <div class="container">
-        <div class="grid">
-            {% for v in vehicles %}
-            <div class="card">
-                <div class="id">#{{ v.id }}</div>
-                <div class="details">{{ v.details }}</div>
-                <div class="price">₹{{ v.price }}</div>
-                <div class="location">{{ v.location }}</div>
-                <a href="{{ v.drive_link }}" target="_blank" class="link">View Images</a>
-            </div>
-            {% endfor %}
-        </div>
+        <div class="loading" id="loading">Loading vehicles...</div>
+        <div class="grid" id="vehicleGrid"></div>
     </div>
+
+    <script>
+        const DATA_CSV_URL = '/api/data';
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const result = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                
+                if (values.length >= 5 && values[0]) {
+                    result.push({
+                        id: values[0],
+                        details: values[1],
+                        price: values[2],
+                        location: values[3],
+                        drive_link: values[4]
+                    });
+                }
+            }
+            
+            return result;
+        }
+
+        async function loadVehicles() {
+            try {
+                const response = await fetch(DATA_CSV_URL);
+                const csvText = await response.text();
+                
+                const vehicles = parseCSV(csvText);
+                
+                // Hide loading, show vehicles
+                document.getElementById('loading').style.display = 'none';
+                const grid = document.getElementById('vehicleGrid');
+                
+                vehicles.forEach(v => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="id">#${v.id}</div>
+                        <div class="details">${v.details}</div>
+                        <div class="price">₹${v.price}</div>
+                        <div class="location">${v.location}</div>
+                        <a href="${v.drive_link}" target="_blank" class="link">View Images</a>
+                    `;
+                    grid.appendChild(card);
+                });
+                
+            } catch (error) {
+                document.getElementById('loading').textContent = 'Error loading vehicles: ' + error.message;
+            }
+        }
+
+        loadVehicles();
+    </script>
 </body>
 </html>
