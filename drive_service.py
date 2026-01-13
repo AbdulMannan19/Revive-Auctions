@@ -207,10 +207,13 @@ def upload_csv_to_drive(service, csv_content, filename, folder_id):
         pass
 
 def download_csv_from_drive(service, filename, folder_id):
+    print(f'[DEBUG] download_csv_from_drive: filename={filename}, folder_id={folder_id}')
     file_id = get_file_in_folder(service, filename, folder_id)
     if not file_id:
+        print(f'[DEBUG] File {filename} not found in folder {folder_id}')
         return None
     
+    print(f'[DEBUG] Found file_id: {file_id}, downloading...')
     request = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
     downloader = MediaIoBaseDownload(fh, request)
@@ -219,7 +222,9 @@ def download_csv_from_drive(service, filename, folder_id):
     while not done:
         status, done = downloader.next_chunk()
     
-    return fh.getvalue().decode('utf-8')
+    content = fh.getvalue().decode('utf-8')
+    print(f'[DEBUG] Downloaded {len(content)} chars')
+    return content
 
 def delete_file_in_folder(service, filename, folder_id):
     file_id = get_file_in_folder(service, filename, folder_id)

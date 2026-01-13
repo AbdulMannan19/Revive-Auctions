@@ -71,15 +71,54 @@ def parse_vehicles(csv_text):
     
     return vehicles
 
+def parse_clean_csv(csv_text):
+    """Parse already-cleaned CSV (like data.csv from Drive)"""
+    print(f'[DEBUG] parse_clean_csv() called with {len(csv_text)} chars')
+    try:
+        df = pd.read_csv(io.StringIO(csv_text))
+        print(f'[DEBUG] DataFrame shape: {df.shape}')
+        print(f'[DEBUG] DataFrame columns: {df.columns.tolist()}')
+        print(f'[DEBUG] First row: {df.iloc[0].to_dict() if len(df) > 0 else "Empty"}')
+        
+        vehicles = []
+        
+        for _, row in df.iterrows():
+            vehicles.append({
+                'id': row['ID'],
+                'details': row['Vehicle Details'],
+                'price': row['Price'],
+                'location': row['Location'],
+                'drive_link': row['Drive Link']
+            })
+        
+        print(f'[DEBUG] Parsed {len(vehicles)} vehicles')
+        return vehicles
+    except Exception as e:
+        print(f'[DEBUG ERROR] parse_clean_csv failed: {e}')
+        import traceback
+        traceback.print_exc()
+        return []
+
 def load_cache_from_drive():
     """Load vehicles_cache from data.csv on Drive"""
     global vehicles_cache
     
+    print('[DEBUG] load_cache_from_drive() called')
     init_drive_service()
     
+    print('[DEBUG] Attempting to download data.csv from Drive...')
     data_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
+    
     if data_csv:
-        vehicles_cache = parse_vehicles(data_csv)
+        print(f'[DEBUG] data.csv downloaded, length: {len(data_csv)} chars')
+        print(f'[DEBUG] First 200 chars: {data_csv[:200]}')
+        vehicles_cache = parse_clean_csv(data_csv)  # Use parse_clean_csv instead!
+        print(f'✓ Loaded {len(vehicles_cache)} vehicles from data.csv')
+        if vehicles_cache:
+            print(f'[DEBUG] First vehicle: {vehicles_cache[0]}')
+    else:
+        print('⚠ No data.csv found on Drive')
+        print('[DEBUG] data_csv is None or empty')
         print(f'✓ Loaded {len(vehicles_cache)} vehicles from data.csv')
     else:
         print('⚠ No data.csv found on Drive')
@@ -122,9 +161,6 @@ def sync_data():
         
         print(f'Creating vehicle folders and copying images to Buffer/ (TEST: 3 vehicles, 5 images each)...')
         
-        # Store new drive links
-        new_drive_links = {}
-        
         for idx, row in df_new.head(3).iterrows():
             vehicle_id = row['ID']
             drive_link = row['Drive Link']
@@ -132,12 +168,7 @@ def sync_data():
             print(f'Vehicle {vehicle_id}:', end=' ')
             folder_id = drive_service.create_vehicle_folder(drive_service_instance, buffer_folder_id, vehicle_id)
             copied, new_link = drive_service.copy_images_for_vehicle(drive_service_instance, vehicle_id, drive_link, folder_id)
-            new_drive_links[vehicle_id] = new_link
             print(f'✓ {copied} images')
-        
-        # Update DataFrame with new drive links
-        df_new['Drive Link'] = df_new['ID'].map(new_drive_links).fillna(df_new['Drive Link'])
-        clean_csv = df_to_clean_csv(df_new)
         
         print('\nBuffer ready! Swapping...')
         drive_service.swap_buffer_to_images(drive_service_instance, buffer_folder_id, images_folder_id)
@@ -149,7 +180,7 @@ def sync_data():
         # Load the new data.csv for cache
         data_csv = drive_service.download_csv_from_drive(drive_service_instance, 'data.csv', root_folder_id)
         if data_csv:
-            vehicles_cache = parse_vehicles(data_csv)
+            vehicles_cache = parse_clean_csv(data_csv)  # Use parse_clean_csv here too!
         
         last_csv_data = new_csv
         print(f'\n✓ Sync complete! {len(vehicles_cache)} vehicles ready')
