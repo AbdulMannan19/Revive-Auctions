@@ -122,7 +122,7 @@ def extract_folder_id(url):
     match = re.search(r'/folders/([a-zA-Z0-9_-]+)', url)
     return match.group(1) if match else None
 
-def get_images_from_folder(service, folder_id, limit=5):
+def get_images_from_folder(service, folder_id, limit=None):
     try:
         query = f"'{folder_id}' in parents and mimeType contains 'image/' and trashed=false"
         results = service.files().list(
@@ -163,7 +163,7 @@ def copy_images_for_vehicle(service, vehicle_id, source_drive_link, dest_folder_
         print(f'  ✗ Invalid Drive link')
         return 0, None
     
-    images = get_images_from_folder(service, source_folder_id, limit=5)
+    images = get_images_from_folder(service, source_folder_id, limit=None)
     copied_count = 0
     
     for idx, img in enumerate(images):

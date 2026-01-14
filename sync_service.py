@@ -141,9 +141,9 @@ def sync_data():
         print('Uploading buffer.csv to Drive...')
         drive_service.upload_csv_to_drive(drive_service_instance, clean_csv, 'buffer.csv', root_folder_id)
         
-        print(f'Creating vehicle folders and copying images to Buffer/ (TEST: 3 vehicles, 5 images each)...')
+        print(f'Creating vehicle folders and copying images to Buffer/...')
         
-        for idx, row in df_new.head(3).iterrows():
+        for idx, row in df_new.iterrows():
             vehicle_id = row['ID']
             drive_link = row['Drive Link']
             
