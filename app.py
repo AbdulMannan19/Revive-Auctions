@@ -28,6 +28,9 @@ def get_data():
         if df is None:
             return jsonify({"error": "Failed to read data.csv"}), 500
         
+        # Replace NaN with empty strings for JSON serialization
+        df = df.fillna('')
+        
         # Convert to list of dictionaries
         data = df.to_dict('records')
         

@@ -79,31 +79,8 @@ def compare_buffer_and_data_csv():
     buffer_subset = buffer_df.iloc[:, :3]
     data_subset = data_df.iloc[:, :3]
     
-    # Debug logging - first 3 records
-    print("\n=== COMPARISON DEBUG ===")
-    print(f"Buffer shape: {buffer_subset.shape}, Data shape: {data_subset.shape}")
-    print(f"Buffer columns: {list(buffer_subset.columns)}")
-    print(f"Data columns: {list(data_subset.columns)}")
-    
-    for i in range(min(3, len(buffer_subset), len(data_subset))):
-        print(f"\n--- Record {i+1} ---")
-        for col_idx in range(min(3, buffer_subset.shape[1], data_subset.shape[1])):
-            buffer_col = buffer_subset.columns[col_idx]
-            data_col = data_subset.columns[col_idx]
-            buffer_val = buffer_subset.iloc[i, col_idx]
-            data_val = data_subset.iloc[i, col_idx]
-            
-            print(f"Column {col_idx+1}:")
-            print(f"  Buffer: col='{buffer_col}', dtype={type(buffer_val).__name__}, value='{buffer_val}'")
-            print(f"  Data:   col='{data_col}', dtype={type(data_val).__name__}, value='{data_val}'")
-            print(f"  Match: {buffer_val == data_val}")
-    
-    print("======================\n")
-    
     # Compare DataFrames
-    result = buffer_subset.equals(data_subset)
-    print(f"Overall comparison result: {result}")
-    return result
+    return buffer_subset.equals(data_subset)
 
 def parse_and_load_vehicle_data():
     """

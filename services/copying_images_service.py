@@ -104,7 +104,6 @@ def process_vehicle(vehicle_index, vehicle_row, buffer_folder_id, max_images=Non
         # Create vehicle folder in Buffer
         vehicle_folder_name = str(vehicle_num)
         vehicle_folder_id = create_folder(service, vehicle_folder_name, buffer_folder_id)
-        print(f"Vehicle {vehicle_num}: Created folder")
         
         # Get all files from source folder
         files = get_files_in_folder(service, source_folder_id)
@@ -131,8 +130,6 @@ def process_vehicle(vehicle_index, vehicle_row, buffer_folder_id, max_images=Non
             copy_file(service, file['id'], file['name'], vehicle_folder_id)
             copied_count += 1
         
-        print(f"Vehicle {vehicle_num}: Copied {copied_count} images")
-        
         return {
             'vehicle_num': vehicle_num,
             'status': 'completed',
@@ -148,15 +145,15 @@ def process_vehicle(vehicle_index, vehicle_row, buffer_folder_id, max_images=Non
             'error': str(e)
         }
 
-def copy_images_from_buffer(parallel=True, max_workers=5, max_vehicles=5, max_images_per_vehicle=3):
+def copy_images_from_buffer(parallel=True, max_workers=5, max_vehicles=None, max_images_per_vehicle=None):
     """
     Load buffer.csv and copy images for each vehicle.
     
     Args:
         parallel: Whether to process vehicles in parallel (default: True)
         max_workers: Number of parallel workers (default: 5)
-        max_vehicles: Maximum number of vehicles to process (default: 5, set to None for all)
-        max_images_per_vehicle: Maximum images per vehicle (default: 3, set to None for all)
+        max_vehicles: Maximum number of vehicles to process (default: None for all)
+        max_images_per_vehicle: Maximum images per vehicle (default: None for all)
     """
     service = get_drive_service()
     
@@ -189,9 +186,6 @@ def copy_images_from_buffer(parallel=True, max_workers=5, max_vehicles=5, max_im
     
     if max_vehicles:
         df = df.head(max_vehicles)
-        print(f"[TEST MODE] Processing {len(df)} vehicles...")
-    else:
-        print(f"Processing {len(df)} vehicles...")
     
     results = []
     
@@ -216,9 +210,6 @@ def copy_images_from_buffer(parallel=True, max_workers=5, max_vehicles=5, max_im
     completed = sum(1 for r in results if r['status'] == 'completed')
     skipped = sum(1 for r in results if r['status'] == 'skipped')
     errors = sum(1 for r in results if r['status'] == 'error')
-    total_images = sum(r.get('images_copied', 0) for r in results)
-    
-    print(f"Completed: {completed}, Skipped: {skipped}, Errors: {errors}, Images: {total_images}")
     
     return results
 

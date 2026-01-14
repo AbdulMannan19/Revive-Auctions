@@ -65,7 +65,10 @@ def move_file(service, file_id, new_parent_id, old_parent_id):
 
 def clear_csv_file(service, file_id):
     """Clear the contents of a CSV file."""
-    csv_buffer = io.BytesIO(b'')
+    csv_buffer = io.BytesIO()
+    csv_buffer.write(b'')
+    csv_buffer.seek(0)
+    
     media = MediaIoBaseUpload(csv_buffer, mimetype='text/csv', resumable=True)
     service.files().update(
         fileId=file_id,
@@ -116,7 +119,6 @@ def transfer_buffer_to_data():
         df.insert(0, 'ID', range(1, len(df) + 1))
     
     # Clear Images folder (delete all contents)
-    print("Clearing Images folder...")
     delete_all_files_in_folder(service, images_folder_id)
     
     # Get all folders in Buffer (numbered folders)
@@ -132,11 +134,8 @@ def transfer_buffer_to_data():
             continue
     
     # Move all folders from Buffer to Images
-    print("Moving folders from Buffer to Images...")
     for item in buffer_folders:
         move_file(service, item['id'], images_folder_id, buffer_folder_id)
-    
-    print(f"Moved {len(buffer_folders)} folders to Images")
     
     # Remove the DRIVE LINK column if it exists
     if 'DRIVE LINK' in df.columns:
@@ -166,13 +165,8 @@ def transfer_buffer_to_data():
         media_body=media
     ).execute()
     
-    print(f"Transferred {len(df)} records to data.csv")
-    
     # Clear buffer.csv
-    print("Clearing buffer.csv...")
     clear_csv_file(service, buffer_csv_id)
-    
-    print("Transfer complete - buffer cleared")
 
 if __name__ == '__main__':
     transfer_buffer_to_data()
