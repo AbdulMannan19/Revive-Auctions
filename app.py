@@ -1,6 +1,43 @@
 from flask import Flask, request, jsonify, render_template
+import threading
+import time
 
 app = Flask(__name__)
+
+# Global sync status
+sync_status = {
+    "running": False,
+    "last_run": None,
+    "last_result": None,
+    "current_step": None,
+    "error": None
+}
+sync_lock = threading.Lock()
+
+def run_sync_background():
+    """Run sync in background thread"""
+    global sync_status
+    from sync_handler import handle_sync_background
+    
+    with sync_lock:
+        sync_status["running"] = True
+        sync_status["current_step"] = "Starting sync..."
+        sync_status["error"] = None
+    
+    try:
+        result = handle_sync_background(sync_status)
+        
+        with sync_lock:
+            sync_status["running"] = False
+            sync_status["last_run"] = time.time()
+            sync_status["last_result"] = result
+            sync_status["current_step"] = "Completed"
+    except Exception as e:
+        with sync_lock:
+            sync_status["running"] = False
+            sync_status["last_run"] = time.time()
+            sync_status["error"] = str(e)
+            sync_status["current_step"] = "Failed"
 
 @app.route('/')
 def index():
@@ -41,8 +78,38 @@ def get_data():
 
 @app.route('/sync', methods=['POST'])
 def sync():
-    from sync_handler import handle_sync
-    return handle_sync()
+    global sync_status
+    
+    with sync_lock:
+        if sync_status["running"]:
+            return jsonify({
+                "success": False,
+                "message": "Sync already in progress",
+                "current_step": sync_status["current_step"]
+            }), 409
+    
+    # Start sync in background thread
+    thread = threading.Thread(target=run_sync_background, daemon=True)
+    thread.start()
+    
+    return jsonify({
+        "success": True,
+        "message": "Sync started in background",
+        "status_url": "/sync/status"
+    }), 202
+
+@app.route('/sync/status', methods=['GET'])
+def sync_status_endpoint():
+    with sync_lock:
+        status_copy = sync_status.copy()
+    
+    return jsonify({
+        "running": status_copy["running"],
+        "current_step": status_copy["current_step"],
+        "last_run": status_copy["last_run"],
+        "last_result": status_copy["last_result"],
+        "error": status_copy["error"]
+    }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
