@@ -1,4 +1,6 @@
 __pycache__/
 .venv/
 .vscode/
-temp.csv
+credentials.json
+token.json
+.env
