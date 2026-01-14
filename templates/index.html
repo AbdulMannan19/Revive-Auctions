@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revive Auctions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-top: 50px;
+        }
+
+        .error {
+            text-align: center;
+            color: #ff6b6b;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .vehicle-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .vehicle-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .location {
+            color: #718096;
+            font-size: 0.95rem;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .location::before {
+            content: '📍';
+        }
+
+        .view-images {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+        }
+
+        .view-images:hover {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Revive Auctions</h1>
+        <div id="content">
+            <div class="loading">Loading vehicles...</div>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                const response = await fetch('/data');
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to load data');
+                }
+
+                const vehicles = result.data;
+                const contentDiv = document.getElementById('content');
+
+                if (vehicles.length === 0) {
+                    contentDiv.innerHTML = '<div class="error">No vehicles available</div>';
+                    return;
+                }
+
+                const gridHTML = `
+                    <div class="grid">
+                        ${vehicles.map((vehicle, index) => {
+                            const vehicleNum = index + 1;
+                            const vehicleName = vehicle['VEHICLE DETAILS'] || 'Unknown Vehicle';
+                            const price = vehicle['AUCTION STARTING PRICE'] || 'N/A';
+                            const location = vehicle['LOCATION'] || 'Unknown Location';
+                            const driveLink = vehicle['DRIVE LINK'] || '#';
+
+                            return `
+                                <div class="card" onclick="window.open('${driveLink}', '_blank')">
+                                    <div class="vehicle-number">Vehicle #${vehicleNum}</div>
+                                    <div class="vehicle-name">${vehicleName}</div>
+                                    <div class="price">₹${price}</div>
+                                    <div class="location">${location}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+
+                contentDiv.innerHTML = gridHTML;
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('content').innerHTML = 
+                    `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Load data when page loads
+        loadData();
+    </script>
+</body>
+</html>
