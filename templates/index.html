@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revive Auctions</title>
+    <title>Revive Auctions - Insurance Claimed Online Auction Vehicles</title>
     <style>
         * {
             margin: 0;
@@ -13,27 +13,155 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f7fa;
             min-height: 100vh;
-            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            font-weight: 300;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
 
-        h1 {
-            text-align: center;
+        .info-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .info-section h2 {
+            color: #667eea;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .info-section h3 {
+            color: #764ba2;
+            font-size: 1.4rem;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .info-section p, .info-section li {
+            color: #4a5568;
+            line-height: 1.8;
+            font-size: 1.05rem;
+            margin-bottom: 12px;
+        }
+
+        .info-section ol, .info-section ul {
+            margin-left: 25px;
+            margin-bottom: 20px;
+        }
+
+        .info-section li {
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .advance-table {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .advance-table p {
+            margin: 8px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .cta-section h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 10px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .vehicles-section {
+            margin-top: 50px;
+        }
+
+        .vehicles-section h2 {
+            text-align: center;
+            color: #2d3748;
+            font-size: 2.2rem;
             margin-bottom: 40px;
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         .loading {
             text-align: center;
-            color: white;
+            color: #667eea;
             font-size: 1.2rem;
             margin-top: 50px;
         }
@@ -59,7 +187,7 @@
             background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
             position: relative;
@@ -68,7 +196,7 @@
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
         }
 
         .card::before {
@@ -120,38 +248,110 @@
             content: '📍';
         }
 
-        .view-images {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: opacity 0.3s ease;
-        }
-
-        .view-images:hover {
-            opacity: 0.9;
-        }
-
         @media (max-width: 768px) {
             .grid {
                 grid-template-columns: 1fr;
             }
 
-            h1 {
+            .header h1 {
                 font-size: 2rem;
+            }
+
+            .info-section {
+                padding: 25px;
+            }
+
+            .info-section h2 {
+                font-size: 1.5rem;
+            }
+
+            .cta-section {
+                padding: 30px 20px;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🚗 WELCOME TO REVIVE AUCTIONS</h1>
+        <p class="subtitle">INSURANCE CLAIMED ONLINE AUCTION VEHICLES</p>
+    </div>
+
     <div class="container">
-        <h1>🚗 Revive Auctions</h1>
-        <div id="content">
-            <div class="loading">Loading vehicles...</div>
+        <!-- Introduction Section -->
+        <div class="info-section">
+            <p>These are online auction vehicles and I bid online on behalf of buyers.</p>
+            
+            <ol>
+                <li><strong>Price given is the Auction Starting Price</strong> and only a reference price for understanding. It is not the final price. Final price will be known only after winning the auction.</li>
+                <li><strong>Auction closing time</strong> is clearly shown in the App. All Quotes have to be made before the Auction Closing Time.</li>
+                <li><strong>Condition Report is not available</strong> for insurance claimed Salvage Vehicles. Also no Starting or test drive options available for these vehicles as they will be in damage and not running Condition.</li>
+            </ol>
+        </div>
+
+        <!-- Steps Section -->
+        <div class="info-section">
+            <h2>STEPS TO GIVE YOUR BEST QUOTE (BUYING BUDGET)</h2>
+            
+            <h3>1. VEHICLE INSPECTION</h3>
+            <p>PLEASE INSPECT THE VEHICLE PHYSICALLY AND CROSS CHECK VEHICLE DETAILS ONLINE BEFORE QUOTING. Vehicle address is already mentioned in the App. No Contact numbers will be shared for Salvage Vehicle inspection.</p>
+            
+            <h3>2. QUOTE / BID</h3>
+            <p>You have to Confirm your best Quote through the application and make refundable advance. I will bid online for you and buy it if it closes in your budget. Otherwise you will get your refund. Your Quote Should be Valid for Minimum 30 days from the date of Auction.</p>
+            
+            <h3>3. STATUS UPDATES</h3>
+            <p>All updates will be provided through WhatsApp and calls. You can only give your quote through SalvageCarz app. This is not a LIVE Auction Site.</p>
+            
+            <div class="highlight-box">
+                <strong>APPROVAL TIME:</strong> After winning the Auction, Approval time will be 2-25 working days after auction. Winning Amount DD has to be submitted and vehicle should be lifted within 4 days after approval.
+            </div>
+        </div>
+
+        <!-- Refundable Advance Section -->
+        <div class="info-section">
+            <h2>Refundable Advance</h2>
+            <div class="advance-table">
+                <p><strong>For Bid value below 5L:</strong> ₹20,000/- Advance</p>
+                <p><strong>For Bid value above 5L:</strong> ₹25,000/- Advance</p>
+                <p><strong>For Bid value above 10L:</strong> ₹50,000/- Advance</p>
+                <p><strong>For Bid value above 25L:</strong> ₹1,00,000/- Advance</p>
+            </div>
+        </div>
+
+        <!-- Important Note Section -->
+        <div class="info-section">
+            <h2>IMPORTANT NOTE</h2>
+            <ul>
+                <li>Refundable advance has to be paid before Auction.</li>
+                <li>Quotes accepted only after Refundable Advance.</li>
+                <li>SalvageCarz is not a live auction site. You can only give your best quote through this app.</li>
+                <li>Refund within 2 hours after auction if your quote is not the highest.</li>
+            </ul>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <h2>Dear Buyer,</h2>
+            <p>FOR MORE DETAILS AND VEHICLES LISTING DOWNLOAD THE ANDROID MOBILE APPLICATION</p>
+            <p>Huge number of Flood Damage Vehicles are being listed in Auction from across the country for Salvage Auction. Major Numbers from Gujarat, Andhra Pradesh, Karnataka, Delhi, Uttarakhand, Kerala and Telangana. Vehicles from all segments are available.</p>
+            
+            <a href="https://chat.whatsapp.com/D2A3kuDeDnqJJISms8y1fu" target="_blank" class="cta-button">
+                📱 Join WhatsApp Community
+            </a>
+            <a href="#" class="cta-button">
+                📲 Download App
+            </a>
+            
+            <p style="margin-top: 30px; font-size: 1.3rem; font-weight: bold;">HAPPY MOTORING<br>REVIVE AUCTIONS</p>
+        </div>
+
+        <!-- Vehicles Section -->
+        <div class="vehicles-section">
+            <h2>🚗 Available Vehicles</h2>
+            <div id="content">
+                <div class="loading">Loading vehicles...</div>
+            </div>
         </div>
     </div>
 
