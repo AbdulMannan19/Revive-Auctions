@@ -63,6 +63,18 @@ def move_file(service, file_id, new_parent_id, old_parent_id):
         fields='id, parents'
     ).execute()
 
+def make_folder_public(service, folder_id):
+    """Make a folder publicly accessible (anyone with link can view)."""
+    permission = {
+        'type': 'anyone',
+        'role': 'reader'
+    }
+    service.permissions().create(
+        fileId=folder_id,
+        body=permission,
+        fields='id'
+    ).execute()
+
 def clear_csv_file(service, file_id):
     """Clear the contents of a CSV file."""
     csv_buffer = io.BytesIO()
@@ -133,9 +145,10 @@ def transfer_buffer_to_data():
         except ValueError:
             continue
     
-    # Move all folders from Buffer to Images
+    # Move all folders from Buffer to Images and make them public
     for item in buffer_folders:
         move_file(service, item['id'], images_folder_id, buffer_folder_id)
+        make_folder_public(service, item['id'])
     
     # Remove the DRIVE LINK column if it exists
     if 'DRIVE LINK' in df.columns:
