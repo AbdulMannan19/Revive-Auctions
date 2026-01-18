@@ -10,19 +10,31 @@
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; }
         .header h1 { font-size: 2rem; margin-bottom: 10px; }
         .container { max-width: 1400px; margin: 20px auto; padding: 20px; }
-        .info-section { background: white; border-radius: 15px; padding: 30px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { color: #667eea; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #667eea; font-size: 1.3rem; }
+        .intro { background: white; border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        .intro p { color: #4a5568; margin-bottom: 10px; }
+        
+        /* Accordion sections */
+        .accordion { margin-bottom: 25px; }
+        .accordion-item { background: white; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+        .accordion-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1.1rem; transition: background 0.3s; }
+        .accordion-header:hover { background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%); }
+        .accordion-header.active { background: #2d3748; }
+        .accordion-header::after { content: '+'; font-size: 1.5rem; font-weight: bold; transition: transform 0.3s; }
+        .accordion-header.active::after { content: '−'; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.4s ease; padding: 0 20px; }
+        .accordion-content.open { max-height: 1000px; padding: 20px; }
+        
         p { margin-bottom: 12px; color: #4a5568; }
         ul { margin: 15px 0 15px 25px; }
         li { margin-bottom: 10px; color: #4a5568; }
-        .highlight { background: #f0f4ff; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #667eea; }
-        .warning { background: #fff8e6; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #f6ad55; }
+        .warning { background: #fff8e6; padding: 15px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #f6ad55; }
         .whatsapp { color: #25d366; font-weight: bold; font-size: 1.2rem; }
         .format-box { background: #f7fafc; padding: 20px; border-radius: 8px; margin: 15px 0; font-family: monospace; line-height: 2; }
-        .contact { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin-top: 20px; text-align: center; }
-        .contact p { color: white; font-size: 1.1rem; }
-        .vehicles-section { margin-top: 30px; }
-        .vehicles-section h2 { text-align: center; border: none; font-size: 1.8rem; margin-bottom: 30px; }
+        .contact-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .contact-box p { color: white; }
+        
+        /* Vehicles section */
+        .vehicles-section h2 { text-align: center; color: #667eea; font-size: 1.8rem; margin-bottom: 30px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
         .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease; cursor: pointer; position: relative; overflow: hidden; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
@@ -43,92 +55,112 @@
     </div>
     
     <div class="container">
-        <div class="info-section">
+        <div class="intro">
             <p>Welcome to <strong>Revive Auto Claims</strong>.</p>
             <p>Below is the daily updated list of Insurance Claimed / Salvage Vehicles available for auction.</p>
-            
-            <div class="highlight">
-                <p>🔗 <strong>Click on any vehicle card below to view complete details</strong></p>
-                <p>(Registration number, location, auction date, reference price, etc.)</p>
+            <p>🔗 <strong>Click on any vehicle card to view complete details</strong></p>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">🔹 IMPORTANT TO READ BEFORE QUOTING</div>
+                <div class="accordion-content">
+                    <ul>
+                        <li>All vehicles listed are insurance-claimed salvage vehicles</li>
+                        <li>Vehicles are in damaged / non-running condition</li>
+                        <li>❌ No condition report, no starting, no test drive available</li>
+                        <li>The price shown is only the auction starting/reference price</li>
+                        <li>👉 Final price is confirmed only after winning the auction</li>
+                        <li><strong>Auction closing time: 4:00 PM sharp</strong></li>
+                    </ul>
+                </div>
             </div>
 
-            <h2>🔹 IMPORTANT TO READ BEFORE QUOTING</h2>
-            <ul>
-                <li>All vehicles listed are insurance-claimed salvage vehicles</li>
-                <li>Vehicles are in damaged / non-running condition</li>
-                <li>❌ No condition report, no starting, no test drive available</li>
-                <li>The price shown is only the auction starting/reference price</li>
-                <li>👉 Final price is confirmed only after winning the auction</li>
-                <li><strong>Auction closing time: 4:00 PM sharp</strong></li>
-            </ul>
-
-            <h2>📝 HOW TO SUBMIT YOUR QUOTE (MANDATORY)</h2>
-            <p>After reviewing the vehicle details, submit your quote only via WhatsApp:</p>
-            <p class="whatsapp">📲 Official WhatsApp Number: +91 63057 14920</p>
-            
-            <p style="margin-top: 20px;"><strong>📌 Quote must be sent in the following format (single message):</strong></p>
-            <div class="format-box">
-                <strong>Quote Submission Format:</strong><br><br>
-                Vehicle Registration Number:<br>
-                Vehicle Location:<br>
-                Auction Date:<br>
-                Your Highest Quote Amount:<br>
-                Advance Payment Screenshot:
-            </div>
-            
-            <div class="warning">
-                <p>⚠️ <strong>Quotes without this format or without advance payment will not be considered</strong></p>
-                <p>📌 Your quote must be valid for minimum 30 days from the auction date</p>
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">📝 HOW TO SUBMIT YOUR QUOTE (MANDATORY)</div>
+                <div class="accordion-content">
+                    <p>After reviewing the vehicle details, submit your quote only via WhatsApp:</p>
+                    <p class="whatsapp">📲 Official WhatsApp Number: +91 63057 14920</p>
+                    <p style="margin-top: 20px;"><strong>📌 Quote must be sent in the following format (single message):</strong></p>
+                    <div class="format-box">
+                        <strong>Quote Submission Format:</strong><br><br>
+                        Vehicle Registration Number:<br>
+                        Vehicle Location:<br>
+                        Auction Date:<br>
+                        Your Highest Quote Amount:<br>
+                        Advance Payment Screenshot:
+                    </div>
+                    <div class="warning">
+                        <p>⚠️ <strong>Quotes without this format or without advance payment will not be considered</strong></p>
+                        <p>📌 Your quote must be valid for minimum 30 days from the auction date</p>
+                    </div>
+                </div>
             </div>
 
-            <h2>💰 ADVANCE PAYMENT & REFUND POLICY</h2>
-            <ul>
-                <li>Advance payment is mandatory before auction</li>
-                <li>If you do NOT win or if approval is not received:
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">💰 ADVANCE PAYMENT & REFUND POLICY</div>
+                <div class="accordion-content">
                     <ul>
-                        <li>✅ 90% advance refunded</li>
-                        <li>❌ 10% deducted as service/processing fee</li>
+                        <li>Advance payment is mandatory before auction</li>
+                        <li>If you do NOT win or if approval is not received:
+                            <ul>
+                                <li>✅ 90% advance refunded</li>
+                                <li>❌ 10% deducted as service/processing fee</li>
+                            </ul>
+                        </li>
+                        <li>If you WIN the auction:
+                            <ul>
+                                <li>✅ Advance amount is adjusted in the final vehicle price</li>
+                            </ul>
+                        </li>
                     </ul>
-                </li>
-                <li>If you WIN the auction:
+                    <p style="margin-top: 20px;"><strong>Advance Slabs:</strong></p>
                     <ul>
-                        <li>✅ Advance amount is adjusted in the final vehicle price</li>
+                        <li>Below ₹5 Lakhs – ₹20,000</li>
+                        <li>Above ₹5 Lakhs – ₹35,000</li>
+                        <li>Above ₹10 Lakhs – ₹50,000</li>
+                        <li>Above ₹25 Lakhs – ₹1,00,000</li>
                     </ul>
-                </li>
-            </ul>
-            
-            <p style="margin-top: 20px;"><strong>Advance Slabs:</strong></p>
-            <ul>
-                <li>Below ₹5 Lakhs – ₹20,000</li>
-                <li>Above ₹5 Lakhs – ₹35,000</li>
-                <li>Above ₹10 Lakhs – ₹50,000</li>
-                <li>Above ₹25 Lakhs – ₹1,00,000</li>
-            </ul>
-            <p>⏱ Refund (if applicable) processed within 2 hours after auction</p>
+                    <p>⏱ Refund (if applicable) processed within 2 hours after auction</p>
+                </div>
+            </div>
 
-            <h2>⏳ APPROVAL & LIFTING</h2>
-            <ul>
-                <li>Approval time: 2–25 working days after auction</li>
-                <li>After approval:
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">⏳ APPROVAL & LIFTING</div>
+                <div class="accordion-content">
                     <ul>
-                        <li>Winning amount DD submission required</li>
-                        <li>Vehicle must be lifted within 4 days</li>
+                        <li>Approval time: 2–25 working days after auction</li>
+                        <li>After approval:
+                            <ul>
+                                <li>Winning amount DD submission required</li>
+                                <li>Vehicle must be lifted within 4 days</li>
+                            </ul>
+                        </li>
                     </ul>
-                </li>
-            </ul>
+                </div>
+            </div>
 
-            <h2>🤝 WHY REVIVE AUTO CLAIMS?</h2>
-            <ul>
-                <li>✔ End-to-end guidance</li>
-                <li>✔ Approval documentation handled on your behalf</li>
-                <li>✔ Complete support for payment & lifting process</li>
-                <li>✔ Transparent process – no confusion, no stress</li>
-            </ul>
-            <p><strong>✨ We handle everything so you don't have to worry.</strong></p>
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">🤝 WHY REVIVE AUTO CLAIMS?</div>
+                <div class="accordion-content">
+                    <ul>
+                        <li>✔ End-to-end guidance</li>
+                        <li>✔ Approval documentation handled on your behalf</li>
+                        <li>✔ Complete support for payment & lifting process</li>
+                        <li>✔ Transparent process – no confusion, no stress</li>
+                    </ul>
+                    <p><strong>✨ We handle everything so you don't have to worry.</strong></p>
+                </div>
+            </div>
 
-            <div class="contact">
-                <p><strong>📞 For Queries:</strong></p>
-                <p style="font-size: 1.3rem; margin-top: 10px;">+91 89770 37039 | +91 63057 14920</p>
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">📞 CONTACT US</div>
+                <div class="accordion-content">
+                    <div class="contact-box">
+                        <p><strong>📞 For Queries:</strong></p>
+                        <p style="font-size: 1.3rem; margin-top: 10px;">+91 89770 37039 | +91 63057 14920</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -141,6 +173,12 @@
     </div>
 
     <script>
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
         async function loadData() {
             try {
                 const response = await fetch('/data');
