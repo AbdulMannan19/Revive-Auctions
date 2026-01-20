@@ -1,5 +1,5 @@
 from services.folder_structure_service import create_folders
-from services.downloading_csv_service import parse_and_load_vehicle_data, compare_buffer_and_data_csv, get_drive_service, find_folder_by_name, find_file_by_name
+from services.downloading_csv_service import parse_and_load_vehicle_data, compare_buffer_and_data_csv, find_folder_by_name, find_file_by_name
 from services.copying_images_service import copy_images_from_buffer
 from services.transfer_data_service import transfer_buffer_to_data, clear_csv_file
 
@@ -8,6 +8,8 @@ def handle_sync_background(status_dict):
     Handle sync in background thread with status updates.
     Returns result dict with success and changes info.
     """
+    from services.oauth_service import AuthenticationError, ConfigurationError
+    
     folder_ids = None
     changes_detected = False
     
@@ -16,6 +18,12 @@ def handle_sync_background(status_dict):
         status_dict["current_step"] = "Step 1: Creating/verifying folder structure"
         folder_ids = create_folders()
         print("Step 1 complete: Folder structure created/verified")
+    except AuthenticationError as e:
+        print(f"Authentication error: {str(e)}")
+        raise Exception(f"Authentication required: {str(e)}")
+    except ConfigurationError as e:
+        print(f"Configuration error: {str(e)}")
+        raise Exception(f"Configuration error: {str(e)}")
     except Exception as e:
         print(f"Error creating folder structure: {str(e)}")
         raise Exception(f"Folder structure error: {str(e)}")
@@ -25,6 +33,12 @@ def handle_sync_background(status_dict):
         status_dict["current_step"] = "Step 2: Loading vehicle data to buffer"
         parse_and_load_vehicle_data()
         print("Step 2 complete: Vehicle data loaded to buffer.csv")
+    except AuthenticationError as e:
+        print(f"Authentication error: {str(e)}")
+        raise Exception(f"Authentication required: {str(e)}")
+    except ConfigurationError as e:
+        print(f"Configuration error: {str(e)}")
+        raise Exception(f"Configuration error: {str(e)}")
     except Exception as e:
         print(f"Error parsing and loading vehicle data: {str(e)}")
         raise Exception(f"Data parsing error: {str(e)}")
@@ -37,6 +51,7 @@ def handle_sync_background(status_dict):
             
             # Clear buffer.csv since no changes detected
             try:
+                from services.oauth_service import get_drive_service
                 service = get_drive_service()
                 root_folder_id = find_folder_by_name(service, 'Revive Auctions')
                 buffer_csv_id = find_file_by_name(service, 'buffer.csv', root_folder_id)
@@ -59,6 +74,12 @@ def handle_sync_background(status_dict):
         status_dict["current_step"] = "Step 3: Copying images to buffer folders"
         results = copy_images_from_buffer()
         print("Step 3 complete: Images copied to buffer folders")
+    except AuthenticationError as e:
+        print(f"Authentication error: {str(e)}")
+        raise Exception(f"Authentication required: {str(e)}")
+    except ConfigurationError as e:
+        print(f"Configuration error: {str(e)}")
+        raise Exception(f"Configuration error: {str(e)}")
     except Exception as e:
         print(f"Error copying images: {str(e)}")
         raise Exception(f"Image copying error: {str(e)}")
@@ -68,6 +89,12 @@ def handle_sync_background(status_dict):
         status_dict["current_step"] = "Step 4: Transferring data to data.csv"
         transfer_buffer_to_data()
         print("Step 4 complete: Data transferred to data.csv")
+    except AuthenticationError as e:
+        print(f"Authentication error: {str(e)}")
+        raise Exception(f"Authentication required: {str(e)}")
+    except ConfigurationError as e:
+        print(f"Configuration error: {str(e)}")
+        raise Exception(f"Configuration error: {str(e)}")
     except Exception as e:
         print(f"Error transferring data: {str(e)}")
         raise Exception(f"Data transfer error: {str(e)}")

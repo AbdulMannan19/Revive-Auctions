@@ -1,14 +1,7 @@
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import io
 from googleapiclient.http import MediaIoBaseUpload
-
-def get_drive_service():
-    """Initialize and return Google Drive service."""
-    creds = Credentials.from_authorized_user_file('token.json')
-    service = build('drive', 'v3', credentials=creds)
-    return service
+from services.oauth_service import get_drive_service
 
 def find_folder_by_name(service, folder_name, parent_id=None):
     """Find a folder by name, optionally within a parent folder."""

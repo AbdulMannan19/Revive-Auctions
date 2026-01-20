@@ -45,7 +45,8 @@ def index():
 
 @app.route('/data', methods=['GET'])
 def get_data():
-    from services.downloading_csv_service import get_drive_service, find_folder_by_name, find_file_by_name, download_csv_as_dataframe
+    from services.downloading_csv_service import find_folder_by_name, find_file_by_name, download_csv_as_dataframe
+    from services.oauth_service import get_drive_service, AuthenticationError, ConfigurationError
     
     try:
         service = get_drive_service()
@@ -72,6 +73,20 @@ def get_data():
         data = df.to_dict('records')
         
         return jsonify({"data": data}), 200
+    
+    except AuthenticationError as e:
+        return jsonify({
+            "error": "Authentication failed",
+            "message": str(e),
+            "error_code": "AUTH_ERROR"
+        }), 401
+    
+    except ConfigurationError as e:
+        return jsonify({
+            "error": "Configuration error",
+            "message": str(e),
+            "error_code": "CONFIG_ERROR"
+        }), 500
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -1,22 +1,15 @@
 import os
 import pandas as pd
 from dotenv import load_dotenv
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 import io
 import warnings
+from services.oauth_service import get_drive_service
 
 # Suppress warnings
 warnings.filterwarnings('ignore')
 
 load_dotenv()
-
-def get_drive_service():
-    """Initialize and return Google Drive service."""
-    creds = Credentials.from_authorized_user_file('token.json')
-    service = build('drive', 'v3', credentials=creds)
-    return service
 
 def find_file_by_name(service, file_name, parent_id=None):
     """Find a file by name, optionally within a parent folder."""
